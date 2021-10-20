@@ -23,7 +23,7 @@ def get_dummy_prediction(output_features, dummies, device):
     for i, feat in enumerate(output_features):
         max_dot_value = -math.inf
         for dum_nb, dum in enumerate(dummies):
-            dot_value = torch.dot(feat, dum[0][0])
+            dot_value = torch.dot(feat, dum)
             if max_dot_value < dot_value:
                 max_dot_value = dot_value
                 preds[i] = dum_nb
