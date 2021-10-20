@@ -18,20 +18,26 @@ class DummyTripletLoss(nn.Module):
                  size,
                  dummies=None,
                  antagonists=None,
-                 distance=None):
+                 distance=None,
+                 weights=None):
         super().__init__()
         self.device = device
         if distance == None:
-            self.triplet = TripletMarginLoss()
+            self.triplet = TripletMarginLoss(reduction='none')
         else:
             self.triplet = TripletMarginWithDistanceLoss(
-                distance_function=distance)
+                distance_function=distance, reduction='none')
         self.dummies = get_binary_dummies(
             size, device) if dummies == None else dummies
         self.antagonists = torch.tensor(
             [1, 0], device=device) if antagonists == None else antagonists
+        self.weights = torch.tensor(
+            [1] * self.dummies.size(0),
+            device=device) if weights == None else torch.tensor(weights,
+                                                                device=device)
 
     def forward(self, input, target, **kwargs):
         p = self.dummies[target]
         n = self.dummies[self.antagonists[target]]
-        return self.triplet(input, p, n)
+        batch_weights = self.weights[target]
+        return (self.triplet(input, p, n) * batch_weights).mean()

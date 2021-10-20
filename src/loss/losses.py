@@ -16,7 +16,7 @@ class Losses:
         if name == 'BCE':
             return Losses(name, CrossEntropyLoss(weight=weights))
         if name == 'Triplet':
-            return Losses(name, TripletLoss(device))
+            return Losses(name, TripletLoss(device, weights=weights))
         if name == 'DmyT':
             return Losses(name, DummyTripletLoss(device, size))
         raise ValueError('This loss name is undefined.')
