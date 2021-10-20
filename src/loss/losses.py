@@ -12,7 +12,7 @@ class Losses:
     def __eq__(self, other):
         self.name == other.name
 
-    def from_string(name, device, size):
+    def from_string(name, device, size, weights=None):
         if name == 'BCE':
             return Losses(name, CrossEntropyLoss())
         if name == 'Triplet':

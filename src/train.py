@@ -153,9 +153,11 @@ def main(args):
     batch_size = args.batch
     output_file = args.output
     data_folder = args.dataset
+    weights = args.weights
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     feature_size = get_feature_size(model_name, device)
-    loss = Losses.from_string(args.loss, device, feature_size)
+    weights = weights if weights != [] else None
+    loss = Losses.from_string(args.loss, device, feature_size, weights)
     if loss.name == 'BCE':
         model = timm.create_model(model_name, pretrained=True, num_classes=2)
     else:
@@ -173,6 +175,7 @@ def main(args):
     print('LOSS:        ', loss.name)
     print('SCHEDULER:   ', scheduler)
     print('OUTPUT:      ', output_file)
+    print('WEIGHTS:     ', weights)
     print('=' * 26)
 
     train_loader = loader(data_folder, model_config['input_size'][1],
@@ -243,6 +246,14 @@ if __name__ == '__main__':
         default='test.pth',
         type=str,
         help="Output file",
+    )
+    parser.add_argument(
+        "-w",
+        "--weights",
+        default=None,
+        nargs='*',
+        type=float,
+        help="Weights corresponding to each label",
     )
 
     args = parser.parse_args()
