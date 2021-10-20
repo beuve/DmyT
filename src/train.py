@@ -1,5 +1,6 @@
 import argparse
 from enum import Enum
+import os
 
 from tqdm import tqdm
 import math
@@ -47,10 +48,9 @@ def one_epoch(model, data_loader, criterion, optimizer, device, step):
             model.eval()
             with torch.no_grad():
                 output = model.forward(data)
-                loss = criterion.value(output, target.argmax(dim=1))
+                loss = criterion(output, target.argmax(dim=1))
                 if criterion.name == 'DmyT':
-                    output = get_dummy_prediction(output,
-                                                  criterion.value.dummies,
+                    output = get_dummy_prediction(output, criterion.dummies,
                                                   device)
                 elif criterion.name == 'Triplet':
                     output = torch.zeros((target.size(0))).to(device)
@@ -61,10 +61,10 @@ def one_epoch(model, data_loader, criterion, optimizer, device, step):
             model.train()
             optimizer.zero_grad()
             output = model.forward(data)
-            loss = criterion.value(output, target.argmax(dim=1))
+            loss = criterion(output, target.argmax(dim=1))
             loss.backward()
             if criterion.name == 'DmyT':
-                output = get_dummy_prediction(output, criterion.value.dummies,
+                output = get_dummy_prediction(output, criterion.dummies,
                                               device)
             elif criterion.name == 'Triplet':
                 output = torch.zeros((target.size(0))).to(device)
@@ -153,11 +153,13 @@ def main(args):
     batch_size = args.batch
     output_file = args.output
     data_folder = args.dataset
-    weights = args.weights
+    weights = args.label_weights
+    labels = os.listdir(os.path.join(data_folder, 'train'))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     feature_size = get_feature_size(model_name, device)
-    weights = weights if weights != [] else None
-    loss = Losses.from_string(args.loss, device, feature_size, weights)
+    label_weights = weights if weights != [] else None
+    loss = Losses.from_string(args.loss, device, len(labels), feature_size,
+                              weights)
     if loss.name == 'BCE':
         model = timm.create_model(model_name, pretrained=True, num_classes=2)
     else:
@@ -175,7 +177,8 @@ def main(args):
     print('LOSS:        ', loss.name)
     print('SCHEDULER:   ', scheduler)
     print('OUTPUT:      ', output_file)
-    print('WEIGHTS:     ', weights)
+    print('WEIGHTS:     ', label_weights)
+    print('LABELS:      ', labels)
     print('=' * 26)
 
     train_loader = loader(data_folder, model_config['input_size'][1],
@@ -248,8 +251,8 @@ if __name__ == '__main__':
         help="Output file",
     )
     parser.add_argument(
-        "-w",
-        "--weights",
+        "-lw",
+        "--label-weights",
         default=None,
         nargs='*',
         type=float,

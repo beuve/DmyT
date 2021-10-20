@@ -40,4 +40,5 @@ class DummyTripletLoss(nn.Module):
         p = self.dummies[target]
         n = self.dummies[self.antagonists[target]]
         batch_weights = self.weights[target]
-        return (self.triplet(input, p, n) * batch_weights).mean()
+        return (self.triplet(input, p, n) *
+                batch_weights).sum() / batch_weights.sum()

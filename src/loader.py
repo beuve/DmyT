@@ -20,8 +20,7 @@ class DataLoader(torch.utils.data.Dataset):
                     self.paths.append((file, l))
         if shuffle:
             np.random.shuffle(self.paths)
-        print("found " + str(len(self.paths)) + " file from " +
-              str(len(self.labels)) + " classes (" + str(self.labels) + ")")
+        print(f"found {len(self.paths)} file from {len(self.labels)}")
 
     def find_label(path, labels, root):
         for i, l in enumerate(labels):

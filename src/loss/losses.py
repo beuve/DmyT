@@ -1,31 +1,26 @@
-import torch
 from loss.dummy_triplet_loss import DummyTripletLoss
 from loss.triplet_loss import TripletLoss
 from torch.nn import CrossEntropyLoss
+import torch
 
 
-class Losses:
+class Losses(torch.nn.Module):
     def __init__(self, name, loss):
+        super(Losses, self).__init__()
         self.name = name
-        self.value = loss
+        self._loss = loss
 
-    def __eq__(self, other):
-        self.name == other.name
-
-    def from_string(name, device, size, weights=None):
+    def from_string(name, device, nb_labels, size, weights=None):
         if name == 'BCE':
             return Losses(name, CrossEntropyLoss(weight=weights))
         if name == 'Triplet':
+            weights = weights if weights != None else torch.tensor(
+                [1] * nb_labels, device=device)
             return Losses(name, TripletLoss(device, weights=weights))
         if name == 'DmyT':
-            return Losses(name, DummyTripletLoss(device, size))
+            return Losses(name, DummyTripletLoss(device, size,
+                                                 weights=weights))
         raise ValueError('This loss name is undefined.')
 
-    def BCE():
-        return Losses('BCE', lambda x: x)
-
-    def Triplet():
-        return Losses('Triplet', lambda x: x)
-
-    def DmyT():
-        return Losses('DmyT', lambda x: x)
+    def forward(self, input, target):
+        return self._loss(input, target)
