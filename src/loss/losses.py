@@ -14,7 +14,7 @@ class Losses:
 
     def from_string(name, device, size, weights=None):
         if name == 'BCE':
-            return Losses(name, CrossEntropyLoss())
+            return Losses(name, CrossEntropyLoss(weight=weights))
         if name == 'Triplet':
             return Losses(name, TripletLoss(device))
         if name == 'DmyT':
