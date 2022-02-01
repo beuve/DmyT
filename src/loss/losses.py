@@ -11,7 +11,7 @@ class Losses(torch.nn.Module):
         self._loss = loss
 
     def from_string(name, device, nb_labels, size, weights=None):
-        if name == 'BCE':
+        if name == 'CrossEntropy':
             return Losses(name, CrossEntropyLoss(weight=weights))
         if name == 'Triplet':
             weights = weights if weights != None else torch.tensor(

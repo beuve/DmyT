@@ -34,10 +34,7 @@ def get_dummy_prediction(output_features, dummies, device):
 def one_epoch(model, data_loader, criterion, optimizer, device, step):
 
     epoch_loss = 0.0
-    epoch_accuracy_fake = 0.0
-    epoch_accuracy_real = 0.0
-    total_real = 0.0
-    total_fake = 0.0
+    epoch_accuracy = 0.0
 
     batch_nb = len(data_loader)
     for (data, target) in tqdm(data_loader, total=batch_nb):
@@ -50,7 +47,8 @@ def one_epoch(model, data_loader, criterion, optimizer, device, step):
                 output = model.forward(data)
                 loss = criterion(output, target.argmax(dim=1))
                 if criterion.name == 'DmyT':
-                    output = get_dummy_prediction(output, criterion.dummies,
+                    output = get_dummy_prediction(output,
+                                                  criterion._loss.dummies,
                                                   device)
                 elif criterion.name == 'Triplet':
                     output = torch.zeros((target.size(0))).to(device)
@@ -64,7 +62,7 @@ def one_epoch(model, data_loader, criterion, optimizer, device, step):
             loss = criterion(output, target.argmax(dim=1))
             loss.backward()
             if criterion.name == 'DmyT':
-                output = get_dummy_prediction(output, criterion.dummies,
+                output = get_dummy_prediction(output, criterion._loss.dummies,
                                               device)
             elif criterion.name == 'Triplet':
                 output = torch.zeros((target.size(0))).to(device)
@@ -72,19 +70,12 @@ def one_epoch(model, data_loader, criterion, optimizer, device, step):
                 output = output.argmax(dim=1)
             optimizer.step()
 
-        accuracy_fake = ((output == 1) *
-                         (target.argmax(dim=1) == 1)).float().sum()
-        accuracy_real = ((output == 0) *
-                         (target.argmax(dim=1) == 0)).float().sum()
+        accuracy = (output == target.argmax(dim=1)).float().mean()
 
         epoch_loss += loss.item()
-        epoch_accuracy_fake += accuracy_fake.item()
-        epoch_accuracy_real += accuracy_real.item()
-        total_real += (target.argmax(dim=1) == 0).float().sum()
-        total_fake += (target.argmax(dim=1) == 1).float().sum()
+        epoch_accuracy += accuracy.item()
 
-    global_acc = (epoch_accuracy_fake / total_fake +
-                  epoch_accuracy_real / total_real) / 2
+    global_acc = epoch_accuracy / len(data_loader)
     global_loss = epoch_loss / len(data_loader)
 
     return global_loss, global_acc
@@ -160,8 +151,10 @@ def main(args):
     label_weights = weights if weights != [] else None
     loss = Losses.from_string(args.loss, device, len(labels), feature_size,
                               weights)
-    if loss.name == 'BCE':
-        model = timm.create_model(model_name, pretrained=True, num_classes=2)
+    if loss.name == 'CrossEntropy':
+        model = timm.create_model(model_name,
+                                  pretrained=True,
+                                  num_classes=len(labels))
     else:
         model = timm.create_model(model_name, pretrained=True, num_classes=0)
     model_config = resolve_data_config({}, model=model)
@@ -227,7 +220,7 @@ if __name__ == '__main__':
         "--loss",
         default='DmyT',
         type=str,
-        help="Loss to be used for training: BCE or Triplet or DmyT",
+        help="Loss to be used for training: CrossEntropy or Triplet or DmyT",
     )
     parser.add_argument(
         "-e",
