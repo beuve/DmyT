@@ -35,7 +35,7 @@ def get_cat_dummies(size, device):
 
 
 # FaceSwap | Face2Face | FaceShifter | Real | Deepfake | NeuralTexture
-def get_method_dummies(size, device):
+def get_5method_dummies(size, device):
     target_real = torch.zeros((size), device=device)
     target_fake = torch.zeros((size), device=device)
     target_deepfake = torch.zeros((size), device=device)
@@ -67,4 +67,34 @@ def get_method_dummies(size, device):
     return dummies, antagonists, labels
 
 
-get_dummy = get_method_dummies
+# FaceSwap | Face2Face | Real | Deepfake | NeuralTexture
+def get_4method_dummies(size, device):
+    target_real = torch.zeros((size), device=device)
+    target_fake = torch.zeros((size), device=device)
+    target_deepfake = torch.zeros((size), device=device)
+    target_faceswapp = torch.zeros((size), device=device)
+    target_neural = torch.zeros((size), device=device)
+    target_face2face = torch.zeros((size), device=device)
+    target_real[:size // 2] = 1
+    target_fake[size // 2:] = 1
+    target_deepfake[size // 2:(5 * size) // 8] = 1
+    target_faceswapp[(5 * size) // 8:(6 * size) // 8] = 1
+    target_neural[(6 * size) // 8:(7 * size) // 8] = 1
+    target_face2face[(7 * size) // 8:] = 1
+    dummies = torch.cat([
+        target_faceswapp.unsqueeze(0),
+        target_face2face.unsqueeze(0),
+        target_real.unsqueeze(0),
+        target_deepfake.unsqueeze(0),
+        target_neural.unsqueeze(0),
+        target_fake.unsqueeze(0),
+    ])
+    antagonists = torch.tensor([2, 2, 5, 2, 2], device=device)
+    labels = [
+        'FaceSwap', 'Face2Face', 'FaceShifter', 'Real', 'Deepfake',
+        'NeuralTexture'
+    ]
+    return dummies, antagonists, labels
+
+
+get_dummy = get_5method_dummies
