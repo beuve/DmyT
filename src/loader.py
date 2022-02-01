@@ -39,6 +39,8 @@ class DataLoader(torch.utils.data.Dataset):
             img = self.transforms(img)
         l = [0] * len(self.labels)
         l[label] = 1
+        if (len(l) == 2):
+            l = [1 - label for label in l]
         l = torch.tensor(l)
         assert l.sum() == 1
         return img, l
