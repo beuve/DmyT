@@ -62,7 +62,7 @@ def get_dummy_predictions(feats, dummies):
 
 
 def get_prediction(model, device, data_folder, loss, input_size):
-    test_loader = loader(data_folder, input_size)
+    test_loader = loader(data_folder, input_size, split='test')
     test_feats, test_labels = get_output(model, device, test_loader)
     if loss.name == 'CrossEntropy':
         test_preds = test_feats.argmax(axis=1)
@@ -119,7 +119,8 @@ def main(args):
     else:
         model = timm.create_model(model_name, pretrained=True, num_classes=0)
     model_config = resolve_data_config({}, model=model)
-    model.load_state_dict(torch.load(weights))
+    if args.weights != None:
+        model.load_state_dict(torch.load(weights))
     model.to(device)
     model.eval()
     print('=' * 10, 'CONFIG', '=' * 10)
