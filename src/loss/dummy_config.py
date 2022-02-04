@@ -90,11 +90,17 @@ def get_4method_dummies(size, device):
         target_fake.unsqueeze(0),
     ])
     antagonists = torch.tensor([2, 2, 5, 2, 2], device=device)
-    labels = [
-        'FaceSwap', 'Face2Face', 'FaceShifter', 'Real', 'Deepfake',
-        'NeuralTexture'
-    ]
+    labels = ['FaceSwap', 'Face2Face', 'Real', 'Deepfake', 'NeuralTexture']
     return dummies, antagonists, labels
 
 
-get_dummy = get_5method_dummies
+def get_dummy(nb_labels, size, device):
+    if (nb_labels == 2):
+        return get_binary_dummies(size, device)
+    elif (nb_labels == 3):
+        return get_cat_dummies(size, device)
+    elif (nb_labels == 5):
+        return get_4method_dummies(size, device)
+    elif (nb_labels == 6):
+        return get_5method_dummies(size, device)
+    print("###### No dummies definition for this number of label ######")

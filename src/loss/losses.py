@@ -14,12 +14,14 @@ class Losses(torch.nn.Module):
         if name == 'CrossEntropy':
             return Losses(name, CrossEntropyLoss(weight=weights))
         if name == 'Triplet':
-            weights = weights if weights != None else torch.tensor(
-                [1] * nb_labels, device=device)
+            weights = weights if weights != None else [1] * nb_labels
             return Losses(name, TripletLoss(device, weights=weights))
         if name == 'DmyT':
-            return Losses(name, DummyTripletLoss(device, size,
-                                                 weights=weights))
+            return Losses(
+                name, DummyTripletLoss(nb_labels,
+                                       device,
+                                       size,
+                                       weights=weights))
         raise ValueError('This loss name is undefined.')
 
     def forward(self, input, target):
