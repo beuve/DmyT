@@ -9,6 +9,8 @@ import torchvision.transforms as transforms
 class DataLoader(torch.utils.data.Dataset):
     def __init__(self, directory, transforms=None, shuffle=True):
         self.labels = os.listdir(directory)
+        if len(self.labels) == 2:
+            self.labels.reverse()
         self.transforms = transforms
         self.paths = []
         for root, _, files in os.walk(directory, topdown=False):

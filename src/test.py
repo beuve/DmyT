@@ -15,15 +15,30 @@ from loader import loader
 from utils import get_feature_size
 
 
-def get_output(model, device, loader, num=0):
+def get_output(
+    model,
+    device,
+    loader,
+    num_labels=1,
+    num=0,
+    num_per_labels=None,
+):
     outputs = None
     labels = None
+    per_labels = [0] * num_labels
     batch_nb = len(loader)
     for i, (data, target) in tqdm(enumerate(loader), total=min(batch_nb, num)):
         data, target = data.to(device), target.to(device)
 
         if num > 0 and i >= num:
             break
+
+        if (num_per_labels != None
+                and per_labels[target.argmax(dim=1)] >= num_per_labels):
+            if np.sum(per_labels) >= num_labels * num_per_labels:
+                break
+            else:
+                continue
 
         with torch.no_grad():
             output = model.forward(data)
@@ -34,16 +49,21 @@ def get_output(model, device, loader, num=0):
                 outputs = torch.cat((outputs, output), 0)
                 labels = torch.cat((labels, target), 0)
 
+        if num_per_labels != None:
+            per_labels[target.argmax(dim=1)] += 1
+
     return outputs.detach().cpu().numpy(), labels.detach().cpu().numpy()
 
 
-def get_svm_predictions(feats, data_folder, model, device, input_size):
+def get_svm_predictions(feats, data_folder, model, device, input_size,
+                        num_labels):
     svc = SVC(probability=True)
     train_loader = loader(data_folder, input_size, split='train')
     train_feats, train_labels = get_output(model,
                                            device,
                                            train_loader,
-                                           num=5000)
+                                           num_labels=num_labels,
+                                           num_per_labels=2000)
     svc.fit(train_feats, train_labels.argmax(axis=1))
     raw_predicts = svc.predict_proba(feats)
     digits_predicts = svc.predict(feats)
@@ -63,14 +83,14 @@ def get_dummy_predictions(feats, dummies):
     return preds
 
 
-def get_prediction(model, device, data_folder, loss, input_size):
+def get_prediction(model, device, data_folder, loss, input_size, num_labels):
     test_loader = loader(data_folder, input_size, split='test')
     test_feats, test_labels = get_output(model, device, test_loader)
     if loss.name == 'CrossEntropy':
         test_preds = test_feats.argmax(axis=1)
     elif loss.name == 'Triplet':
         test_preds = get_svm_predictions(test_feats, data_folder, model,
-                                         device, input_size)
+                                         device, input_size, num_labels)
     else:
         test_preds = get_dummy_predictions(test_feats,
                                            loss._loss.dummies.cpu().numpy())
@@ -144,6 +164,8 @@ def main(args):
     weights = args.weights
     data_folder = args.dataset
     labels = os.listdir(os.path.join(data_folder, 'test'))
+    if (len(labels) == 2):
+        labels.reverse()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     feature_size = get_feature_size(model_name, device)
     loss = Losses.from_string(args.loss, device, len(labels), feature_size)
@@ -155,7 +177,8 @@ def main(args):
         model = timm.create_model(model_name, pretrained=True, num_classes=0)
     model_config = resolve_data_config({}, model=model)
     if args.weights != None:
-        model.load_state_dict(torch.load(weights))
+        model.load_state_dict(
+            torch.load(weights, map_location=torch.device(device)))
     model.to(device)
     model.eval()
     print('=' * 10, 'CONFIG', '=' * 10)
@@ -164,7 +187,7 @@ def main(args):
     print('LOSS:               ', loss.name)
     print('=' * 28)
     outputs, gt = get_prediction(model, device, data_folder, loss,
-                                 model_config['input_size'][1])
+                                 model_config['input_size'][1], len(labels))
     print()
     print('=' * 10, 'RESULT', '=' * 10)
     accuracy(outputs, gt)
