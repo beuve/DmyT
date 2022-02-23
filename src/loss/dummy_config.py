@@ -3,10 +3,10 @@ import torch
 
 # Real | Fake
 def get_binary_dummies(size, device):
-    target_real = torch.ones(size).to(device)
-    target_real[:target_real.size(0) // 2] = 0
-    target_fake = torch.ones(size).to(device)
-    target_fake[target_fake.size(0) // 2:] = 0
+    target_real = torch.zeros(size).to(device)
+    target_real[:target_real.size(0) // 2] = 1
+    target_fake = torch.zeros(size).to(device)
+    target_fake[target_fake.size(0) // 2:] = 1
     dummies = torch.cat([target_fake.unsqueeze(0), target_real.unsqueeze(0)])
     antagonists = torch.tensor([1, 0], device=device)
     labels = ['Fake', 'Real']

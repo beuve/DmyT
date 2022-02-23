@@ -24,7 +24,7 @@ def get_dummy_prediction(output_features, dummies, device):
     for i, feat in enumerate(output_features):
         max_dot_value = -math.inf
         for dum_nb, dum in enumerate(dummies):
-            dot_value = torch.dot(feat, dum)
+            dot_value = torch.dot(feat, dum / dum.sum())
             if max_dot_value < dot_value:
                 max_dot_value = dot_value
                 preds[i] = dum_nb
@@ -131,8 +131,8 @@ def fit(
                 torch.save(model.state_dict(), output)
                 best_valid_acc = valid_acc if loss.name != 'Triplet' else valid_loss
 
-            print("[VALID] LOSS: {:2.4f}, ACCURACY:{:2.4f} ".format(
-                valid_loss, valid_acc))
+            print(
+                f"[VALID] LOSS: {valid_loss:2.4f}, ACCURACY:{valid_acc:2.4f}")
 
         scheduler.step()
 

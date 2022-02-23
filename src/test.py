@@ -63,7 +63,7 @@ def get_svm_predictions(feats, data_folder, model, device, input_size,
                                            device,
                                            train_loader,
                                            num_labels=num_labels,
-                                           num_per_labels=2000)
+                                           num_per_labels=1000)
     svc.fit(train_feats, train_labels.argmax(axis=1))
     raw_predicts = svc.predict_proba(feats)
     digits_predicts = svc.predict(feats)
@@ -164,8 +164,6 @@ def main(args):
     weights = args.weights
     data_folder = args.dataset
     labels = os.listdir(os.path.join(data_folder, 'test'))
-    if (len(labels) == 2):
-        labels.reverse()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     feature_size = get_feature_size(model_name, device)
     loss = Losses.from_string(args.loss, device, len(labels), feature_size)
