@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from torch.nn import TripletMarginWithDistanceLoss, CosineSimilarity
+from torch.nn import TripletMarginWithDistanceLoss, CosineSimilarity, TripletMarginLoss
 from loss.dummy_config import get_dummy
 
 
@@ -9,10 +9,12 @@ class DummyTripletLoss(nn.Module):
     def __init__(self, nb_labels, device, size, weights=None, dummies=None):
         super().__init__()
         self.device = device
-        distance = lambda x, y: -CosineSimilarity()(
-            x, y) if nb_labels > 2 else None
-        self.triplet = TripletMarginWithDistanceLoss(
-            distance_function=distance, reduction='none')
+        if nb_labels > 2:
+            distance = lambda x, y: -CosineSimilarity()(x, y)
+            self.triplet = TripletMarginWithDistanceLoss(
+                distance_function=distance, reduction='none')
+        else:
+            self.triplet = TripletMarginLoss(reduction='none')
         self.dummies, self.antagonists, _ = dummies if dummies != None else get_dummy(
             nb_labels, size, device)
         self.weights = torch.tensor(

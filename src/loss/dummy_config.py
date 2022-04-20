@@ -25,12 +25,12 @@ def get_cat_dummies(size, device):
     target_reenact[(8 * size) // 10:] = 1
     dummies = torch.cat([
         target_swapp.unsqueeze(0),
-        target_fake.unsqueeze(0),
         target_reenact.unsqueeze(0),
+        target_real.unsqueeze(0),
         target_fake.unsqueeze(0),
     ])
-    antagonists = torch.tensor([1, 3, 1], device=device)
-    labels = ['Face-Swap', 'Real', 'Reenactment']
+    antagonists = torch.tensor([2, 2, 3], device=device)
+    labels = ['Face-Swap', 'Reenactment', 'Real']
     return dummies, antagonists, labels
 
 

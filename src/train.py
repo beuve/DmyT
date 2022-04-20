@@ -148,9 +148,10 @@ def main(args):
     labels = os.listdir(os.path.join(data_folder, 'train'))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     feature_size = get_feature_size(model_name, device)
-    label_weights = weights if weights != [] else None
+    label_weights = torch.tensor(weights,
+                                 device=device) if weights != [] else None
     loss = Losses.from_string(args.loss, device, len(labels), feature_size,
-                              weights)
+                              label_weights)
     if loss.name == 'CrossEntropy':
         model = timm.create_model(model_name,
                                   pretrained=True,
@@ -159,7 +160,7 @@ def main(args):
         model = timm.create_model(model_name, pretrained=True, num_classes=0)
     model_config = resolve_data_config({}, model=model)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1, gamma=1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 3, gamma=0.5)
 
     print('=' * 10, 'CONFIG', '=' * 10)
     print('MODEL:       ', model_name)
